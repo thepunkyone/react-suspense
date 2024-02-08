@@ -231,6 +231,7 @@ const PokemonResourceCacheContext = React.createContext({})
 
 function usePokemonResourceCache() {
   const cache = React.useContext(PokemonResourceCacheContext)
+
   return React.useCallback(
     name => {
       const lowerName = name.toLowerCase()
