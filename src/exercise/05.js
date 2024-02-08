@@ -12,63 +12,12 @@ import {
 } from '../pokemon'
 import {createResource} from '../utils'
 
-// ❗❗❗❗
-// 🦉 On this one, make sure that you UNCHECK the "Disable cache" checkbox
-// in your DevTools "Network Tab". We're relying on that cache for this
-// approach to work!
-// ❗❗❗❗
-
-// we need to make a place to store the resources outside of render so
-// 🐨 create "cache" object here.
-
-const imgSrcResourceCache = {}
-
 function preloadImage(src) {
   return new Promise(resolve => {
     const img = document.createElement('img')
     img.src = src
     img.onload = () => resolve(src)
   })
-}
-
-function createImgSrcResource(src) {
-  return createResource(preloadImage(src))
-}
-
-function getImgSrcResource(src) {
-  let imgSrcResource = imgSrcResourceCache[src]
-
-  if (!imgSrcResource) {
-    imgSrcResource = createImgSrcResource(src)
-
-    imgSrcResourceCache[src] = imgSrcResource
-  }
-
-  return imgSrcResource
-}
-
-function Img({src, alt, ...props}) {
-  const resource = getImgSrcResource(src)
-
-  return <img src={resource.read()} alt={alt} {...props} />
-}
-
-function PokemonInfo({pokemonResource}) {
-  const pokemon = pokemonResource.read()
-  return (
-    <div>
-      <div className="pokemon-info__img-wrapper">
-        <Img src={pokemon.image} alt={pokemon.name} />
-      </div>
-      <PokemonDataView pokemon={pokemon} />
-    </div>
-  )
-}
-
-const SUSPENSE_CONFIG = {
-  timeoutMs: 4000,
-  busyDelayMs: 300,
-  busyMinDurationMs: 700,
 }
 
 const pokemonResourceCache = {}
@@ -84,7 +33,32 @@ function getPokemonResource(name) {
 }
 
 function createPokemonResource(pokemonName) {
-  return createResource(fetchPokemon(pokemonName))
+  const image = getImageUrlForPokemon(pokemonName)
+
+  return {
+    data: createResource(fetchPokemon(pokemonName)),
+    image: createResource(preloadImage(image)),
+  }
+}
+
+function PokemonInfo({pokemonResource}) {
+  const pokemon = pokemonResource.data.read()
+  const image = pokemonResource.image.read()
+
+  return (
+    <div>
+      <div className="pokemon-info__img-wrapper">
+        <img src={image} alt={pokemon.name} />
+      </div>
+      <PokemonDataView pokemon={pokemon} />
+    </div>
+  )
+}
+
+const SUSPENSE_CONFIG = {
+  timeoutMs: 4000,
+  busyDelayMs: 300,
+  busyMinDurationMs: 700,
 }
 
 function App() {
